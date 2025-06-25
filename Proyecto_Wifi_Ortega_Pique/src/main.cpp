@@ -13,7 +13,7 @@ const char* password = "u58kkqpz";
 #define BUTTON1_PIN 18     // Botón manual ventilador
 #define BUTTON2_PIN 15     // Botón modo auto/manual
 #define LED1_PIN 12
-#define LED2_PIN 11
+#define LED2_PIN 13
 #define UMBRAL_HUMEDAD 50.0
 
 // OLED
