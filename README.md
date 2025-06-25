@@ -34,6 +34,12 @@ Estos componentes són los más cruciales para garantizar que todos los disposit
 
 
 ## 2. Presupuesto:
+En este apartado hemos realizado un estudio con los precios totales que nos ha costado a nosotros (teniendo en cuenta todo el material que nos han cedido del laboratorio de la universidad) y el presupuesto que habría necesitado una persona externa para recrear exactamente el mismo proyecto que nosotros pero sin las facilidades que hemos tenido nosotros a la hora de conseguir según que materiales. Todos los precios los hemos sacado de Amazon, el sitio por donde nosotros lo hemos comprado todo, siendo conscientes de que seguramente existen otras páginas web donde los materiales y componentes són más económicos, solo que nosotros valoramos más el tiempo de entrega al coste monetario.
+
+![image](https://github.com/user-attachments/assets/4aaa06ef-dd48-4573-abb3-5c6969993de7)
+
+Como se puede observar en la tabla, una persona externa, sin las ventajas económicas que nosotros hemos tenido y comprando en el mismo sitio que nosotros se gastaría 29,75€ de más.
+
 
 ## 3. Diagrama de bloques:
 
@@ -63,23 +69,307 @@ graph LR
 
 ## 4. Montaje:
 
+
+
 ## 5. Funcionalidades:
 En este proyecto contamos con 3 "entradas" y 5 "salidas" físicas, junto con dos modos de funcionamiento. Las entradas son dos pulsadores y el sensor de temperatura y humedad ATH10. 
 
+Para inicializar la pantalla y el sensor hemos usado este código:
+```
+ Wire.begin(8, 9);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println("Error inicializando pantalla OLED");
+  }
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.display();
+
+  I2C_Sensor.begin(16, 17);
+  if (!aht.begin(&I2C_Sensor)) {
+    Serial.println("Error inicializando sensor AHT10");
+  } else {
+    Serial.println("Sensor AHT10 listo.");
+  }
+
+```
+
 El pulsador principal, se encarga de encender y apagar el ventilador cuando el sistema se encuentra en modo manual, de manera que en cuanto se pulsa el mismo, el estado del relé cambia, cambiando así también el estado del ventilador y estos mismos no vuelven a cambiar hasta que no se vuelve a pulsar de nuevo el pulsador (simulando de esta manera un sistema de "Switch-on, Switch-off").
+
+En nuestro código esto se define como:
+```
+ // Control manual solo si estamos en modo manual
+  if (!modoAutomatico) {
+    if (boton1Presionado && !pulsacion1Procesada) {
+      ventiladorActivo = !ventiladorActivo;
+      pulsacion1Procesada = true;
+    } else if (!boton1Presionado) {
+      pulsacion1Procesada = false;
+    }
+```
 
 El segundo pulsador se encarga de alternar entre modo manual (activación del ventilador mediante pulsador) y modo automático. El modo automático consiste en escoger dos temperaturas (En este caso en nuestro código hemos escogido 28ºC y 30ºC) para que cuando el sensor de temperatura detecte una temperatura menor a 28ºC se apague automáticamente el ventilador, mientras que si la temperatura supera los 30ºC el ventilador se enciende automáticamente. Para evitar que el ventilador se encienda y apague oscilando entre una temperatura fija, hemos dejado esos 2ºC de margen, donde se respeta el estado en el que está el ventilador (es decir, "de donde viene"). Así pues si nos encontramos que está disminuyendo la temperatura, cuando el sensor de temperatura marque 29ºC, el ventilador seguirá en marcha, ya que está establecido que no se pare hasta que no baje de 28ºC. Lo mismo pasa cuando la temperatura es creciente. Si el ventilador está parado y el sensor de temperatura vuelve a marcar 29ºC, el ventilador no se encenderá hasta pasar los 30ºC.
 Cada vez que el ventilador se enciende, o debe encenderse, hemos programado un LED que se debe encender a su misma vez que el ventilador, ya que en caso de que no se encienda el ventilador, si se enciende en LED significa que hay un fallo en el relé o en el propio hardware del ventilador, mientras que si también falla el funcionamiento del LED el error se encuentra en la programación. De esta manera hemos podido corregir y encontrar mucho mas rápido los diferentes errores que nos han ido surgiendo.
 
+El código que cambia entre manual y automático es el siguiente:
+```
+  // Alternar modo automático/manual
+  if (boton2Presionado && !pulsacion2Procesada) {
+    modoAutomatico = !modoAutomatico;
+    pulsacion2Procesada = true;
+  } else if (!boton2Presionado) {
+    pulsacion2Procesada = false;
+  }
+```
+
+El código del funcionamiento en durante el modo automático:
+```
+  // Control automático ventilador
+  if (modoAutomatico) {
+    if (temperatura >= 30.0) {
+      estadoAutomaticoVentilador = true;
+    } else if (temperatura <= 28.0) {
+      estadoAutomaticoVentilador = false;
+    }
+    ventiladorActivo = estadoAutomaticoVentilador;
+  }
+```
+Código que actualiza el relé y el LED:
+```
+// Actualizar relay y LED1
+  digitalWrite(RELAY1_PIN, ventiladorActivo ? LOW : HIGH);
+  digitalWrite(LED1_PIN, ventiladorActivo);
+
+```
 Una vez ejecutado el programa, en la pantalla OLED podremos encontrar toda la información relevante sobre el funcionamiento a tiempo real, mostrando así la temperatura y humedad detectados por el sensor en cada ciclo, el estado del ventilador (ENCENDIDO/APAGADO), el modo del sistema (AUTOMATICO/MANUAL) y cuando encender o apagar el humidificador. Esto consiste en que por debajo de un porcentaje de humedad, el sistema pide al usuario que encienda el humidificador manualmente. Luego existe un intervalo donde por pantalla se muestra que la humedad es ideal. Cuando la humedad se encuentra en este estado óptimo se enciende el segundo LED. En caso de que la humedad supere un cierto porcentaje, se le pedirá por pantalla al usuario que apague el humidificador.
+
+Código que muestra toda la información a tiempo real en la pantalla OLED:
+```
+ // Mostrar en OLED
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print(modoAutomatico ? "Modo: AUTO" : "Modo: MANUAL");
+  display.setCursor(0, 10);
+  display.print("Vent: ");
+  display.println(ventiladorActivo ? "ON" : "OFF");
+
+  display.print("Temp: ");
+  display.print(temperatura);
+  display.println(" C");
+
+  display.print("Hum: ");
+  display.print(hum);
+  display.println(" %");
+
+  display.println(estadoHumidificadorGlobal);
+  display.display();
+
+  // Mostrar en Serial
+  Serial.println("=== ESTADO DEL SISTEMA ===");
+  Serial.print("Temperatura: ");
+  Serial.print(temperatura);
+  Serial.println(" °C");
+
+  Serial.print("Humedad: ");
+  Serial.print(hum);
+  Serial.println(" %");
+
+  Serial.print("Modo: ");
+  Serial.println(modoAutomatico ? "AUTOMATICO" : "MANUAL");
+
+  Serial.print("Ventilador: ");
+  Serial.println(ventiladorActivo ? "ENCENDIDO" : "APAGADO");
+
+  Serial.print("Humidificador: ");
+  Serial.println(estadoHumidificadorGlobal);
+  Serial.println();
+```
 
 El humidificador funciona con su propia placa base, lo que hace imposible la manipulación directa mediante la ESP^32-S3. Es por eso que hemos implementado los mensajes por pantalla anteriores a modo de guia para el usuario y que el proyecto siga siendo eficiente y funcional.
 
+Código de aviso de los estados del humidificador y el control del LED2:
+```
+ // Decidir estado del humidificador y LED2
+  if (hum < UMBRAL_HUMEDAD - 2) {
+    estadoHumidificadorGlobal = "Encender humidificador";
+    digitalWrite(LED2_PIN, LOW);
+  } else if (hum > UMBRAL_HUMEDAD + 2) {
+    estadoHumidificadorGlobal = "Apagar humidificador";
+    digitalWrite(LED2_PIN, LOW);
+  } else {
+    estadoHumidificadorGlobal = "Humedad optima";
+    digitalWrite(LED2_PIN, HIGH);
+  }
+```
+
 Por último, hemos implementado una página web donde se muestran los mismos datos que en la pantalla OLED, añadiendo dos gráficos que se llenan a tiempo real (uno para la temperatura y otro para la humedad). En la web también hemos programado el botón que alterna el sistema entre manual/automatico, y cuando se cambia de automático a manual, en la weh aparece un segundo botón que alterna el estado del ventilador entre ENCENDIDO y APAGADO.
+En nuestro código, todo esto lo implementa la función handleRoot() que es la siguiente:
+```
+void handleRoot() {
+  String html = R"rawliteral(
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Control Ventilador y Humidificador</title>
+      <style>
+        body { font-family: Arial; margin: 20px; background: #f0f0f0; }
+        .status { margin-top: 10px; }
+        button { padding:10px 20px; font-size:16px; margin:5px; }
+        canvas { background: white; border: 1px solid #ccc; margin-top:10px; }
+      </style>
+    </head>
+    <body>
+      <h2>Estado Sistema</h2>
+      <p>Temperatura: <span id="temp">--</span> °C</p>
+      <p>Humedad: <span id="hum">--</span> %</p>
+      <p>Ventilador: <span id="vent">--</span></p>
+      <p>Modo: <span id="modo">--</span></p>
+      <p>Humidificador: <span id="humstate">--</span></p>
+      <button id="toggleModo">Cambiar Modo</button>
+      <button id="toggleVent" style="display:none;">Encender/Apagar Ventilador</button>
 
-## 6. Conclusiones:
+      <canvas id="chartTemp" width="400" height="150"></canvas>
+      <canvas id="chartHum" width="400" height="150"></canvas>
 
-Codigo main.cpp:
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script>
+        const tempEl = document.getElementById('temp');
+        const humEl = document.getElementById('hum');
+        const ventEl = document.getElementById('vent');
+        const modoEl = document.getElementById('modo');
+        const humStateEl = document.getElementById('humstate');
+        const toggleModoBtn = document.getElementById('toggleModo');
+        const toggleVentBtn = document.getElementById('toggleVent');
+
+        toggleModoBtn.onclick = () => {
+          fetch('/toggleModo').then(updateStatus);
+        };
+
+        toggleVentBtn.onclick = () => {
+          fetch('/toggleVent').then(updateStatus);
+        };
+
+        let tempChart, humChart;
+        let tempData = [];
+        let humData = [];
+        let labels = [];
+
+        function setupCharts() {
+          const ctxTemp = document.getElementById('chartTemp').getContext('2d');
+          const ctxHum = document.getElementById('chartHum').getContext('2d');
+
+          tempChart = new Chart(ctxTemp, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Temperatura (°C)',
+                data: tempData,
+                borderColor: 'red',
+                fill: false,
+              }]
+            },
+            options: {
+              animation: false,
+              scales: { y: { min: 0, max: 50 } }
+            }
+          });
+
+          humChart = new Chart(ctxHum, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Humedad (%)',
+                data: humData,
+                borderColor: 'blue',
+                fill: false,
+              }]
+            },
+            options: {
+              animation: false,
+              scales: { y: { min: 0, max: 100 } }
+            }
+          });
+        }
+
+        function updateStatus() {
+          fetch('/status')
+            .then(response => response.json())
+            .then(data => {
+              tempEl.textContent = data.temperatura.toFixed(1);
+              humEl.textContent = data.humedad.toFixed(1);
+              ventEl.textContent = data.ventilador ? 'ENCENDIDO' : 'APAGADO';
+              modoEl.textContent = data.modoAutomatico ? 'AUTOMATICO' : 'MANUAL';
+              humStateEl.textContent = data.estadoHumidificador;
+
+              if (data.modoAutomatico) {
+                toggleVentBtn.style.display = 'none';
+              } else {
+                toggleVentBtn.style.display = 'inline-block';
+              }
+
+              // Actualizar arrays para graficos
+              const now = new Date();
+              const label = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+              labels.push(label);
+              if (labels.length > 30) labels.shift();
+
+              tempData.push(data.temperatura);
+              if (tempData.length > 30) tempData.shift();
+
+              humData.push(data.humedad);
+              if (humData.length > 30) humData.shift();
+
+              tempChart.update();
+              humChart.update();
+            });
+        }
+
+        window.onload = () => {
+          setupCharts();
+          updateStatus();
+          setInterval(updateStatus, 2000);
+        };
+      </script>
+    </body>
+    </html>
+  )rawliteral";
+
+  server.send(200, "text/html", html);
+}
+
+void handleStatus() {
+  String json = "{";
+  json += "\"temperatura\":" + String(temperaturaGlobal, 1) + ",";
+  json += "\"humedad\":" + String(humedadGlobal, 1) + ",";
+  json += "\"ventilador\":" + String(ventiladorGlobal ? "true" : "false") + ",";
+  json += "\"modoAutomatico\":" + String(modoAutomaticoGlobal ? "true" : "false") + ",";
+  json += "\"estadoHumidificador\":\"" + estadoHumidificadorGlobal + "\"";
+  json += "}";
+
+  server.send(200, "application/json", json);
+}
+
+void handleToggleModo() {
+  modoAutomatico = !modoAutomatico;
+  server.send(200, "text/plain", "OK");
+}
+
+void handleToggleVent() {
+  if (!modoAutomatico) {
+    ventiladorActivo = !ventiladorActivo;
+  }
+  server.send(200, "text/plain", "OK");
+}
+```
+
+
+Nuestro código completo es el siguiente:
+
+
+### Codigo main.cpp:
 ```
 #include <WiFi.h>
 #include <WebServer.h>
@@ -445,6 +735,10 @@ void loop() {
 
   delay(1000);
 }
+```
+## 6. Conclusiones
 
 
 ```
+
+## 6. Conclusiones:
