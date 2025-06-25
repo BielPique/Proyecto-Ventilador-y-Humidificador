@@ -1,4 +1,7 @@
 # PROYECTO: VENTILADOR Y HUMIDIFICADOR
+En este proyecto final tenemos como objetivo trabajar con un ventilador de 12V y un humidificador de 5V. Hemos diseñado un sistema semiautomático controlado por nuestro microprocesador ESP32-S3 que trabaja con la ayuda de un sensor de temperatura ATH10, entre otros componentes. 
+
+A continuación se explica más en produndidad todos los detalles de este proyecto:
 
 ## 1.COMPONENTES:
 Los componentes que constituyen este proyecto son:
@@ -31,6 +34,7 @@ Estos componentes són los más cruciales para garantizar que todos los disposit
 
 
 ## 2. Presupuesto:
+
 ## 3. Diagrama de bloques:
 
 ```mermaid
@@ -58,7 +62,21 @@ graph LR
 ```
 
 ## 4. Montaje:
+
 ## 5. Funcionalidades:
+En este proyecto contamos con 3 "entradas" y 5 "salidas" físicas, junto con dos modos de funcionamiento. Las entradas son dos pulsadores y el sensor de temperatura y humedad ATH10. 
+
+El pulsador principal, se encarga de encender y apagar el ventilador cuando el sistema se encuentra en modo manual, de manera que en cuanto se pulsa el mismo, el estado del relé cambia, cambiando así también el estado del ventilador y estos mismos no vuelven a cambiar hasta que no se vuelve a pulsar de nuevo el pulsador (simulando de esta manera un sistema de "Switch-on, Switch-off").
+
+El segundo pulsador se encarga de alternar entre modo manual (activación del ventilador mediante pulsador) y modo automático. El modo automático consiste en escoger dos temperaturas (En este caso en nuestro código hemos escogido 28ºC y 30ºC) para que cuando el sensor de temperatura detecte una temperatura menor a 28ºC se apague automáticamente el ventilador, mientras que si la temperatura supera los 30ºC el ventilador se enciende automáticamente. Para evitar que el ventilador se encienda y apague oscilando entre una temperatura fija, hemos dejado esos 2ºC de margen, donde se respeta el estado en el que está el ventilador (es decir, "de donde viene"). Así pues si nos encontramos que está disminuyendo la temperatura, cuando el sensor de temperatura marque 29ºC, el ventilador seguirá en marcha, ya que está establecido que no se pare hasta que no baje de 28ºC. Lo mismo pasa cuando la temperatura es creciente. Si el ventilador está parado y el sensor de temperatura vuelve a marcar 29ºC, el ventilador no se encenderá hasta pasar los 30ºC.
+Cada vez que el ventilador se enciende, o debe encenderse, hemos programado un LED que se debe encender a su misma vez que el ventilador, ya que en caso de que no se encienda el ventilador, si se enciende en LED significa que hay un fallo en el relé o en el propio hardware del ventilador, mientras que si también falla el funcionamiento del LED el error se encuentra en la programación. De esta manera hemos podido corregir y encontrar mucho mas rápido los diferentes errores que nos han ido surgiendo.
+
+Una vez ejecutado el programa, en la pantalla OLED podremos encontrar toda la información relevante sobre el funcionamiento a tiempo real, mostrando así la temperatura y humedad detectados por el sensor en cada ciclo, el estado del ventilador (ENCENDIDO/APAGADO), el modo del sistema (AUTOMATICO/MANUAL) y cuando encender o apagar el humidificador. Esto consiste en que por debajo de un porcentaje de humedad, el sistema pide al usuario que encienda el humidificador manualmente. Luego existe un intervalo donde por pantalla se muestra que la humedad es ideal. Cuando la humedad se encuentra en este estado óptimo se enciende el segundo LED. En caso de que la humedad supere un cierto porcentaje, se le pedirá por pantalla al usuario que apague el humidificador.
+
+El humidificador funciona con su propia placa base, lo que hace imposible la manipulación directa mediante la ESP^32-S3. Es por eso que hemos implementado los mensajes por pantalla anteriores a modo de guia para el usuario y que el proyecto siga siendo eficiente y funcional.
+
+Por último, hemos implementado una página web donde se muestran los mismos datos que en la pantalla OLED, añadiendo dos gráficos que se llenan a tiempo real (uno para la temperatura y otro para la humedad). En la web también hemos programado el botón que alterna el sistema entre manual/automatico, y cuando se cambia de automático a manual, en la weh aparece un segundo botón que alterna el estado del ventilador entre ENCENDIDO y APAGADO.
+
 ## 6. Conclusiones:
 
 Codigo main.cpp:
@@ -78,7 +96,7 @@ const char* password = "u58kkqpz";
 #define BUTTON1_PIN 18     // Botón manual ventilador
 #define BUTTON2_PIN 15     // Botón modo auto/manual
 #define LED1_PIN 12
-#define LED2_PIN 11
+#define LED2_PIN 13
 #define UMBRAL_HUMEDAD 50.0
 
 // OLED
