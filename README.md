@@ -68,7 +68,63 @@ graph LR
 ```
 
 ## 4. Montaje:
+En este apartado se comentan las conexiones y los pines utilizados para poder realizar el montaje del proyecto. 
 
+Primero conectamos el relé a la ESP32-S3, donde:
+
+IN1 --> GPIO10
+
+GND --> GND
+
+VCC --> 5V de un generador externo
+
+Dentro del mismo relé
+
+COM --> 12V de un generador externo
+
+NO--> Abierto
+
+NC --> Positivo del ventilador
+
+El negativo del ventilador y GND del generador externo de 12V se juntan en una tierra común independiente a la del resto del montaje. El resto de tierras se juntan en una común.
+
+Los dos pulsadores:
+
+Pulsador ventilador --> GPIO18
+
+Pulsador manual/automático --> GPIO15
+
+Sensor de temperatura ATH10:
+
+SDA --> GPIO16
+
+SCL --> GPIO17
+
+GND --> GND
+
+Vin--> 3V3
+
+Pantalla OLED:
+
+SDA --> GPIO8
+
+SCK --> GPIO9
+
+GND --> GND
+
+VDD --> 3V3
+
+LEDS:
+
+LED ventilador --> GPIO12
+
+LED humedad --> GPIO13
+
+Humidificador:
+
+Positivo --> Generador externo 5V
+
+Negativo --> GND
 
 
 ## 5. Funcionalidades:
@@ -739,6 +795,3 @@ void loop() {
 ## 6. Conclusiones
 
 
-```
-
-## 6. Conclusiones:
