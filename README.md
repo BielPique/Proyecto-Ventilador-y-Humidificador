@@ -3,7 +3,7 @@ En este proyecto final tenemos como objetivo trabajar con un ventilador de 12V y
 
 A continuación se explica más en produndidad todos los detalles de este proyecto:
 
-## 1.COMPONENTES:
+## 1. COMPONENTES:
 Los componentes que constituyen este proyecto son:
 #### 1. ESP32-s3: 
 Es el componente principal, el cual se encarga de dirigir al resto de componentes para que cada uno realice su respectiva función en su debido momento para que el conjunto desempeñe el objetivo final de este proyecto de manera adecuada y sincronizada.
@@ -793,5 +793,7 @@ void loop() {
 }
 ```
 ## 6. Conclusiones
+Resumiento, este proyecto nos permite operar tanto manual como automáticamente el control del ventilador, aportandole esa flexibilidad en cuanto a funcionamiento. También nos ofrece un monitoreo ambiental de temperatura y humedad a tiempo real, grácias al sensor y pantalla. Los LEDS nos ofrecen una ayuda interactiva en la que podemos detectar con más facilidad errores y dónde se ubican estos últimos. Finalmente, este proyecto cuenta con una página web que permite la consulta y control desde un navegador local, incluyendo datos estadísticos como gráficos que se van actualizando en tiempo real.
 
+Una parte positiva del proyecto es que gracias a la ESP32-S3 junto con los protocolos I2C, facilita una ampliación futura de este mismo pudiendo añadir sensores adicionales o actuadores nuevos.
 
